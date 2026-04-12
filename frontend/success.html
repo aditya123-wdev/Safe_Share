@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+    <div class="bg-gray-800 p-10 rounded-2xl text-center max-w-sm w-full border border-gray-700">
+        <h2 class="text-2xl font-bold mb-4 text-green-500">File Secured</h2>
+        <input id="shareLink" readonly class="w-full bg-gray-900 border border-gray-700 p-3 rounded-lg text-blue-400 mb-6 text-center">
+        <button onclick="copy()" id="copyBtn" class="w-full bg-blue-600 py-3 rounded-xl font-bold">Copy Link</button>
+    </div>
+    <script>
+        const fileId = new URLSearchParams(window.location.search).get('id');
+        const fullURL = `${window.location.origin}/file/${fileId}`;
+        document.getElementById('shareLink').value = fullURL;
+
+        function copy() {
+            navigator.clipboard.writeText(fullURL);
+            document.getElementById('copyBtn').innerText = "Copied!";
+        }
+    </script>
+</body>
+</html>

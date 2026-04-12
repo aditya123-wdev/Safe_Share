@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Safe-Share | Secure Drop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+    <div class="max-w-md w-full p-8 bg-gray-800 rounded-2xl shadow-2xl border border-gray-700">
+        <h1 class="text-3xl font-bold text-center text-blue-500 mb-6">Safe-Share</h1>
+
+        <div id="dropZone" class="border-2 border-dashed border-gray-600 rounded-xl p-10 text-center cursor-pointer hover:border-blue-500 transition-all mb-6">
+            <p id="fileName">Drag file here or click</p>
+            <input type="file" id="fileInput" class="hidden">
+        </div>
+
+        <div class="space-y-4">
+            <input type="password" id="pin" placeholder="Create Access PIN (Required)" class="w-full bg-gray-700 p-3 rounded-lg border border-gray-600 focus:border-blue-500 outline-none">
+            <div class="flex gap-4">
+                <div class="flex-1">
+                    <label class="text-xs text-gray-500 uppercase font-bold">Expiry</label>
+                    <select id="expiry" class="w-full bg-gray-700 p-2 rounded mt-1">
+                        <option value="1">1 Hour</option>
+                        <option value="24">24 Hours</option>
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label class="text-xs text-gray-500 uppercase font-bold">Limit</label>
+                    <input type="number" id="limit" value="1" min="1" class="w-full bg-gray-700 p-2 rounded mt-1">
+                </div>
+            </div>
+            <button type= "button" onclick="upload(event)" id="btn" class="w-full bg-blue-600 py-3 rounded-lg font-bold hover:bg-blue-500 transition-all">Generate Secure Link</button>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDisplay = document.getElementById('fileName');
+        let selectedFile = null;
+
+        // Click to open file picker
+        dropZone.onclick = () => fileInput.click();
+        
+        // Handle file selection via click
+        fileInput.onchange = (e) => {
+            if (e.target.files.length) {
+                selectedFile = e.target.files[0];
+                fileNameDisplay.innerText = selectedFile.name;
+            }
+        };
+
+        // Drag & Drop handlers
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-500', 'bg-gray-700/50');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500', 'bg-gray-700/50');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500', 'bg-gray-700/50');
+            
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                selectedFile = files[0];
+                fileNameDisplay.innerText = selectedFile.name;
+                // Also update the file input so that the selected file is consistent if the user clicks later
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(selectedFile);
+                fileInput.files = dataTransfer.files;
+            }
+        });
+
+        async function upload(event) {
+             event.preventDefault();
+    console.log("UPLOAD STARTED");
+
+            const pin = document.getElementById('pin').value;
+            if (!selectedFile) return alert("Please select a file.");
+            if (!pin) return alert("You must set a PIN!");
+
+            const btn = document.getElementById('btn');
+            btn.innerText = "Encrypting & Uploading...";
+            btn.disabled = true;
+
+            const fd = new FormData();
+            fd.append('file', selectedFile);
+            fd.append('password', pin);
+            fd.append('expiry', document.getElementById('expiry').value);
+            fd.append('downloadLimit', document.getElementById('limit').value);
+
+            try {
+                const res = await fetch('http://localhost:5000/api/files/upload', { method: 'POST', body: fd });
+                const data = await res.json();
+                console.log(data.fileId);
+
+                if (res.ok) {
+                    window.location.href = `http://localhost:5000/success.html?id=${data.fileId}`;
+                } else {
+                    alert(data.error);
+                }
+            } catch (err) {
+                alert("Server error. Check console.");
+                console.error(err);
+            } finally {
+                btn.innerText = "Generate Secure Link";
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
